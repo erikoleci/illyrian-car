@@ -47,7 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenA
         <div className="flex items-center justify-between">
           {/* Brand Logo */}
           <div onClick={() => handleNavClick('home')}>
-            <Logo size="md" />
+            <Logo size="xl" />
           </div>
 
           {/* Desktop Navigation Links */}

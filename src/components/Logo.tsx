@@ -3,7 +3,7 @@ import illyrianLogo from '../assets/illyrian-logo.jpeg';
 
 interface LogoProps {
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   showBadge?: boolean;
 }
 
@@ -12,6 +12,7 @@ export const Logo: React.FC<LogoProps> = ({ className = '', size = 'md' }) => {
     sm: 'h-10',
     md: 'h-12',
     lg: 'h-16',
+    xl: 'h-20',
   };
 
   return (

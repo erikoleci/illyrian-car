@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { CarCard } from '../components/CarCard';
 import { WhyChooseUs } from '../components/WhyChooseUs';
 import { HowItWorks } from '../components/HowItWorks';
@@ -6,7 +6,7 @@ import { ContactSection } from '../components/ContactSection';
 import { getFeaturedCars } from '../data/cars';
 import { Car } from '../types/car';
 import { createGeneralWhatsAppLink, COMPANY_CONFIG } from '../config/whatsapp';
-import { MessageCircle, ArrowRight, ShieldCheck, Sparkles, Plane, Calendar, MapPin, ChevronRight, Check } from 'lucide-react';
+import { MessageCircle, ArrowRight, ShieldCheck, Sparkles, Plane, Check } from 'lucide-react';
 import illyrianLogo from '../assets/illyrian-logo.jpeg';
 
 interface HomeProps {
@@ -17,15 +17,6 @@ interface HomeProps {
 
 export const Home: React.FC<HomeProps> = ({ setActiveTab, onSelectCar, cars }) => {
   const featuredCars = cars ? cars.filter((c) => c.featured) : getFeaturedCars();
-
-  const [pickupLocation, setPickupLocation] = useState('Tirana Airport (TIA)');
-  const [carType, setCarType] = useState('All');
-
-  const handleQuickSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setActiveTab('cars');
-    window.scrollTo({ top: 500, behavior: 'smooth' });
-  };
 
   return (
     <div className="min-h-screen text-white">
@@ -104,71 +95,6 @@ export const Home: React.FC<HomeProps> = ({ setActiveTab, onSelectCar, cars }) =
                 <span>Zero Tarifa të Fshehura</span>
               </div>
             </div>
-          </div>
-
-          {/* Quick Filter Search Bar Bar Widget */}
-          <div className="mt-12 bg-neutral-900/90 border border-neutral-800 rounded-2xl p-4 sm:p-6 shadow-2xl backdrop-blur-md">
-            <form onSubmit={handleQuickSearch} className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-3 items-end">
-              <div className="lg:col-span-2 space-y-1">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span>Lokacioni i Marrjes</span>
-                </label>
-                <select
-                  value={pickupLocation}
-                  onChange={(e) => setPickupLocation(e.target.value)}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
-                >
-                  <option value="Tirana Airport (TIA)">Aeroporti i Rinasit (TIA)</option>
-                  <option value="Tirana Center">Qendra e Tiranës</option>
-                  <option value="Durres Port">Porti i Durrësit</option>
-                  <option value="Vlora City">Vlorë / Bregdet</option>
-                </select>
-              </div>
-
-              <div className="lg:col-span-2 space-y-1">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>Tipi i Makinës</span>
-                </label>
-                <select
-                  value={carType}
-                  onChange={(e) => setCarType(e.target.value)}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
-                >
-                  <option value="All">Gjithë Kategoritë</option>
-                  <option value="SUV">SUV & 4x4</option>
-                  <option value="Luxury">Luxury & Sports</option>
-                  <option value="Sedan">Sedan Business</option>
-                  <option value="Electric">Electric / Hybrid</option>
-                </select>
-              </div>
-
-              <div className="lg:col-span-2 space-y-1">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
-                  Rezervim Direkt
-                </label>
-                <a
-                  href={createGeneralWhatsAppLink(`Përshëndetje! Dëshiroj të marr makinë në ${pickupLocation}.`)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
-                >
-                  <MessageCircle className="w-4 h-4 fill-current" />
-                  <span>WhatsApp (+355 69 623 4684)</span>
-                </a>
-              </div>
-
-              <div className="lg:col-span-1">
-                <button
-                  type="submit"
-                  className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-black font-extrabold rounded-xl text-xs flex items-center justify-center gap-1 cursor-pointer transition-colors"
-                >
-                  <span>Kërko</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       </section>
