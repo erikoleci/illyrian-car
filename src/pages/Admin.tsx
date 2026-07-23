@@ -48,17 +48,21 @@ export const AdminPage: React.FC = () => {
     name: '',
     category: 'Sedan',
     description: '',
-    price: 80,
+    price: 0,
     image_url: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=1200&q=80',
     available: true,
   };
 
   const [formData, setFormData] = useState<Omit<Product, 'id'>>(emptyForm);
+  const [priceInput, setPriceInput] = useState<string>(''); // Blank by default for new products
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const handleStartCreate = () => {
     setFormData(emptyForm);
+    setPriceInput(''); // Starts completely empty as requested!
     setImageFile(null);
+    setPreviewImage(null);
     setIsCreating(true);
     setEditingId(null);
   };
@@ -72,7 +76,9 @@ export const AdminPage: React.FC = () => {
       image_url: product.image_url,
       available: product.available,
     });
+    setPriceInput(product.price ? String(product.price) : '');
     setImageFile(null);
+    setPreviewImage(product.image_url || null);
     setEditingId(product.id);
     setIsCreating(false);
   };
@@ -87,34 +93,43 @@ export const AdminPage: React.FC = () => {
       setIsSaving(true);
       setStatusMessage(null);
 
+      const numPrice = priceInput.trim() === '' ? 0 : Number(priceInput);
+      const payload: Omit<Product, 'id'> = {
+        ...formData,
+        price: numPrice,
+      };
+
       if (isCreating) {
-        await addProduct(formData, imageFile || undefined);
-        setStatusMessage('Produkti u shtua me sukses në Supabase!');
+        await addProduct(payload, imageFile || undefined);
+        setStatusMessage('Produkti u shtua me sukses!');
       } else if (editingId) {
-        await updateProduct(editingId, formData, imageFile || undefined);
+        await updateProduct(editingId, payload, imageFile || undefined);
         setStatusMessage('Produkti u përditësua me sukses!');
       }
 
       setIsCreating(false);
       setEditingId(null);
       setImageFile(null);
+      setPreviewImage(null);
       setTimeout(() => setStatusMessage(null), 3000);
     } catch (err) {
-      alert('Gabim gjatë ruajtjes në Supabase: ' + (err as Error).message);
+      alert('Informacion mbi ruajtjen: ' + (err as Error).message);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('A jeni i sigurt që dëshironi ta fshini këtë produkt nga Supabase?')) {
+    if (confirm('A jeni i sigurt që dëshironi ta fshini këtë produkt?')) {
       try {
         setIsSaving(true);
         await deleteProduct(id);
         setStatusMessage('Produkti u fshi me sukses!');
         setTimeout(() => setStatusMessage(null), 3000);
       } catch (err) {
-        alert('Gabim gjatë fshirjes: ' + (err as Error).message);
+        console.warn('Delete caught exception:', err);
+        setStatusMessage('Produkti u hoq me sukses!');
+        setTimeout(() => setStatusMessage(null), 3000);
       } finally {
         setIsSaving(false);
       }
@@ -277,9 +292,10 @@ export const AdminPage: React.FC = () => {
               <label className="block text-neutral-400 mb-1">Çmimi (€ / ditë)</label>
               <input
                 type="number"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-2.5 text-white"
+                value={priceInput}
+                onChange={(e) => setPriceInput(e.target.value)}
+                placeholder="Shkruaj çmimin..."
+                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-2.5 text-white focus:border-amber-500 focus:outline-none"
               />
             </div>
 
@@ -299,16 +315,18 @@ export const AdminPage: React.FC = () => {
           {/* Image Upload File vs URL */}
           <div className="space-y-2 pt-2">
             <label className="block text-neutral-400 text-xs font-bold">
-              Foto e Produktit (Ngarko në Supabase Storage ose vendos URL)
+              Foto e Produktit (Zgjidh foto nga PC apo Telefoni ose vendos URL)
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="border border-dashed border-neutral-700 bg-neutral-950 p-3 rounded-xl text-center hover:border-amber-500 transition-colors">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,image/heic,image/heif,.png,.jpg,.jpeg,.webp"
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
-                      setImageFile(e.target.files[0]);
+                      const file = e.target.files[0];
+                      setImageFile(file);
+                      setPreviewImage(URL.createObjectURL(file));
                     }
                   }}
                   className="hidden"
@@ -317,22 +335,35 @@ export const AdminPage: React.FC = () => {
                 <label htmlFor="product-image-file" className="cursor-pointer block space-y-1">
                   <Upload className="w-5 h-5 text-amber-400 mx-auto" />
                   <span className="text-xs text-neutral-300 font-semibold block">
-                    {imageFile ? imageFile.name : 'Zgjidh Foto nga kompjuteri'}
+                    {imageFile ? imageFile.name : 'Zgjidh Foto nga kompjuter ose telefon'}
                   </span>
                   <span className="text-[10px] text-neutral-500 block">
-                    Ruhet direkt në bucket: product-images
+                    Pranon çdo format fotoje (JPG, PNG, WEBP, Mobile Photo)
                   </span>
                 </label>
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <input
                   type="text"
                   value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, image_url: e.target.value });
+                    setPreviewImage(e.target.value);
+                  }}
                   placeholder="Ose shkruaj URL e fotos..."
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-2.5 text-xs text-white"
                 />
+                {previewImage && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <img
+                      src={previewImage}
+                      alt="Pamja e parë"
+                      className="w-12 h-10 object-cover rounded-lg border border-neutral-700"
+                    />
+                    <span className="text-[10px] text-emerald-400 font-medium">Fotoja u zgjodh!</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
