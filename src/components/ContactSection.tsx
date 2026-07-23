@@ -183,20 +183,13 @@ Mesazhi: ${formData.notes || 'Dëshiroj informacion për disponueshmërinë.'}`;
                     <label className="block text-xs font-semibold text-neutral-300 mb-1">
                       Makina e Dëshiruar
                     </label>
-                    <select
+                    <input
+                      type="text"
+                      placeholder="Shkruaj emrin e makinës (p.sh. BMW 5 Series)"
                       value={formData.carPreference}
                       onChange={(e) => setFormData({ ...formData, carPreference: e.target.value })}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-amber-500"
-                    >
-                      <option value="BMW 5 Series (120€/day)">BMW 5 Series (120€/day)</option>
-                      <option value="Mercedes-Benz G-Class AMG (350€/day)">Mercedes-Benz G-Class AMG (350€/day)</option>
-                      <option value="Audi RS6 Avant (220€/day)">Audi RS6 Avant (220€/day)</option>
-                      <option value="Porsche Panamera GTS (280€/day)">Porsche Panamera GTS (280€/day)</option>
-                      <option value="Range Rover Sport (250€/day)">Range Rover Sport (250€/day)</option>
-                      <option value="Mercedes-Benz E-Class (130€/day)">Mercedes-Benz E-Class (130€/day)</option>
-                      <option value="Volkswagen Golf 8 (55€/day)">Volkswagen Golf 8 (55€/day)</option>
-                      <option value="Audi Q7 S-Line (160€/day)">Audi Q7 S-Line (160€/day)</option>
-                    </select>
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-amber-500"
+                    />
                   </div>
 
                   <div>

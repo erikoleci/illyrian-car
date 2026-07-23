@@ -59,7 +59,7 @@ export default function App() {
     <div className="relative min-h-screen bg-black text-white flex flex-col justify-between selection:bg-amber-500 selection:text-black">
       {/* Fixed Watermark Background Logo */}
       <div
-        className="fixed inset-0 z-0 pointer-events-none bg-center bg-no-repeat opacity-[0.06]"
+        className="fixed inset-0 z-0 pointer-events-none bg-center bg-no-repeat opacity-[0.14]"
         style={{
           backgroundImage: `url(${illyrianLogo})`,
           backgroundSize: 'min(70vw, 900px)',
