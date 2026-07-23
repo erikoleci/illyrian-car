@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Product } from '../types/product';
 import {
   getProducts,
+  subscribeProducts,
   addProduct,
   updateProduct,
   deleteProduct,
@@ -27,14 +28,25 @@ export function useProducts() {
   }, []);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    let isSubscribed = true;
+    setLoading(true);
+
+    const unsubscribe = subscribeProducts((liveProducts) => {
+      if (isSubscribed) {
+        setProducts(liveProducts);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      isSubscribed = false;
+      unsubscribe();
+    };
+  }, []);
 
   const handleAdd = async (productData: Omit<Product, 'id'>, imageFile?: File) => {
     try {
-      const newProduct = await addProduct(productData, imageFile);
-      setProducts((prev) => [newProduct, ...prev]);
-      return newProduct;
+      return await addProduct(productData, imageFile);
     } catch (err) {
       throw err;
     }
@@ -46,9 +58,7 @@ export function useProducts() {
     newImageFile?: File
   ) => {
     try {
-      const updated = await updateProduct(id, updates, newImageFile);
-      setProducts((prev) => prev.map((p) => (p.id === id ? updated : p)));
-      return updated;
+      return await updateProduct(id, updates, newImageFile);
     } catch (err) {
       throw err;
     }
@@ -57,7 +67,6 @@ export function useProducts() {
   const handleDelete = async (id: string) => {
     try {
       await deleteProduct(id);
-      setProducts((prev) => prev.filter((p) => String(p.id) !== String(id)));
     } catch (err) {
       throw err;
     }
@@ -73,3 +82,4 @@ export function useProducts() {
     deleteProduct: handleDelete,
   };
 }
+
