@@ -27,7 +27,7 @@ export const Home: React.FC<HomeProps> = ({ setActiveTab, onSelectCar, cars }) =
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen text-white">
       {/* ================= HERO SECTION ================= */}
       <section className="relative min-h-[90vh] flex items-center justify-center pt-24 pb-16 overflow-hidden">
         {/* Background Image with Dark Vignette */}

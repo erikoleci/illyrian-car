@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Car } from '../types/car';
 import { createCarBookingWhatsAppLink } from '../config/whatsapp';
-import { Fuel, Gauge, Users, Calendar, CheckCircle2, XCircle, ArrowUpRight, MessageCircle } from 'lucide-react';
+import { Fuel, Gauge, Users, Calendar, CheckCircle2, XCircle, ArrowUpRight, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface CarCardProps {
   car: Car;
@@ -10,20 +10,69 @@ interface CarCardProps {
 
 export const CarCard: React.FC<CarCardProps> = ({ car, onSelectCar }) => {
   const whatsappUrl = createCarBookingWhatsAppLink(car);
+  const photos = car.gallery && car.gallery.length > 0 ? car.gallery : [car.image];
+  const [photoIndex, setPhotoIndex] = useState(0);
+
+  const showPrevPhoto = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPhotoIndex((prev) => (prev - 1 + photos.length) % photos.length);
+  };
+
+  const showNextPhoto = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPhotoIndex((prev) => (prev + 1) % photos.length);
+  };
 
   return (
     <div className="group relative bg-neutral-900/80 rounded-2xl overflow-hidden border border-neutral-800 hover:border-amber-500/50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-amber-500/10 flex flex-col justify-between">
       {/* Top Image Container */}
       <div className="relative aspect-[16/10] overflow-hidden bg-neutral-950">
         <img
-          src={car.image}
-          alt={`${car.brand} ${car.model}`}
+          src={photos[photoIndex]}
+          alt={`${car.brand} ${car.model} - foto ${photoIndex + 1}`}
           className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
         />
 
         {/* Subtle Dark Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-transparent to-black/40" />
+
+        {/* Photo Browser Controls (only if more than 1 photo) */}
+        {photos.length > 1 && (
+          <>
+            <button
+              onClick={showPrevPhoto}
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+              aria-label="Foto e mëparshme"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={showNextPhoto}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+              aria-label="Foto tjetër"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+
+            {/* Dot Indicators */}
+            <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10">
+              {photos.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPhotoIndex(idx);
+                  }}
+                  className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                    idx === photoIndex ? 'w-4 bg-amber-400' : 'w-1.5 bg-white/50 hover:bg-white/80'
+                  }`}
+                  aria-label={`Shko te foto ${idx + 1}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Status Badge (Available / Rented) */}
         <div className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-md border">

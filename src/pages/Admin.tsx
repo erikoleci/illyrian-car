@@ -55,14 +55,23 @@ export const AdminPage: React.FC = () => {
 
   const [formData, setFormData] = useState<Omit<Product, 'id'>>(emptyForm);
   const [priceInput, setPriceInput] = useState<string>(''); // Blank by default for new products
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const MAX_PHOTOS = 3;
+  // Already-saved photo URLs (only relevant when editing an existing car)
+  const [existingUrls, setExistingUrls] = useState<string[]>([]);
+  // Newly selected files pending upload
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  // Local object URLs for previewing newly selected files
+  const [newFilePreviews, setNewFilePreviews] = useState<string[]>([]);
+
+  const previewImages = [...existingUrls, ...newFilePreviews];
+  const remainingSlots = MAX_PHOTOS - previewImages.length;
 
   const handleStartCreate = () => {
     setFormData(emptyForm);
     setPriceInput(''); // Starts completely empty as requested!
-    setImageFile(null);
-    setPreviewImage(null);
+    setExistingUrls([]);
+    setImageFiles([]);
+    setNewFilePreviews([]);
     setIsCreating(true);
     setEditingId(null);
   };
@@ -77,15 +86,45 @@ export const AdminPage: React.FC = () => {
       available: product.available,
     });
     setPriceInput(product.price ? String(product.price) : '');
-    setImageFile(null);
-    setPreviewImage(product.image_url || null);
+    setExistingUrls(
+      product.gallery_urls && product.gallery_urls.length > 0
+        ? product.gallery_urls
+        : product.image_url
+        ? [product.image_url]
+        : []
+    );
+    setImageFiles([]);
+    setNewFilePreviews([]);
     setEditingId(product.id);
     setIsCreating(false);
+  };
+
+  const handleAddPhotoFiles = (files: FileList | null) => {
+    if (!files || remainingSlots <= 0) return;
+    const newFiles = Array.from(files).slice(0, remainingSlots);
+    if (newFiles.length === 0) return;
+    setImageFiles((prev) => [...prev, ...newFiles]);
+    setNewFilePreviews((prev) => [...prev, ...newFiles.map((f) => URL.createObjectURL(f))]);
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    if (index < existingUrls.length) {
+      setExistingUrls((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      const fileIndex = index - existingUrls.length;
+      setImageFiles((prev) => prev.filter((_, i) => i !== fileIndex));
+      setNewFilePreviews((prev) => prev.filter((_, i) => i !== fileIndex));
+    }
   };
 
   const handleSave = async () => {
     if (!formData.name) {
       alert('Ju lutem plotësoni emrin e produktit!');
+      return;
+    }
+
+    if (previewImages.length === 0) {
+      alert('Ju lutem shtoni të paktën 1 foto për këtë makinë!');
       return;
     }
 
@@ -97,20 +136,23 @@ export const AdminPage: React.FC = () => {
       const payload: Omit<Product, 'id'> = {
         ...formData,
         price: numPrice,
+        image_url: existingUrls[0] || formData.image_url,
+        gallery_urls: existingUrls,
       };
 
       if (isCreating) {
-        await addProduct(payload, imageFile || undefined);
+        await addProduct(payload, imageFiles.length > 0 ? imageFiles : undefined);
         setStatusMessage('Produkti u shtua me sukses!');
       } else if (editingId) {
-        await updateProduct(editingId, payload, imageFile || undefined);
+        await updateProduct(editingId, payload, imageFiles.length > 0 ? imageFiles : undefined);
         setStatusMessage('Produkti u përditësua me sukses!');
       }
 
       setIsCreating(false);
       setEditingId(null);
-      setImageFile(null);
-      setPreviewImage(null);
+      setImageFiles([]);
+      setNewFilePreviews([]);
+      setExistingUrls([]);
       setTimeout(() => setStatusMessage(null), 3000);
     } catch (err) {
       alert('Informacion mbi ruajtjen: ' + (err as Error).message);
@@ -312,60 +354,61 @@ export const AdminPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Image Upload File vs URL */}
+          {/* Photo Gallery Upload — 1 to 3 photos per car */}
           <div className="space-y-2 pt-2">
             <label className="block text-neutral-400 text-xs font-bold">
-              Foto e Produktit (Zgjidh foto nga PC apo Telefoni ose vendos URL)
+              Fotot e Makinës ({previewImages.length}/{MAX_PHOTOS}) — përdoruesit mund t'i shikojnë të gjitha
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="border border-dashed border-neutral-700 bg-neutral-950 p-3 rounded-xl text-center hover:border-amber-500 transition-colors">
-                <input
-                  type="file"
-                  accept="image/*,image/heic,image/heif,.png,.jpg,.jpeg,.webp"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      const file = e.target.files[0];
-                      setImageFile(file);
-                      setPreviewImage(URL.createObjectURL(file));
-                    }
-                  }}
-                  className="hidden"
-                  id="product-image-file"
-                />
-                <label htmlFor="product-image-file" className="cursor-pointer block space-y-1">
-                  <Upload className="w-5 h-5 text-amber-400 mx-auto" />
-                  <span className="text-xs text-neutral-300 font-semibold block">
-                    {imageFile ? imageFile.name : 'Zgjidh Foto nga kompjuter ose telefon'}
-                  </span>
-                  <span className="text-[10px] text-neutral-500 block">
-                    Pranon çdo format fotoje (JPG, PNG, WEBP, Mobile Photo)
-                  </span>
-                </label>
-              </div>
 
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  value={formData.image_url}
-                  onChange={(e) => {
-                    setFormData({ ...formData, image_url: e.target.value });
-                    setPreviewImage(e.target.value);
-                  }}
-                  placeholder="Ose shkruaj URL e fotos..."
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-2.5 text-xs text-white"
-                />
-                {previewImage && (
-                  <div className="flex items-center gap-2 pt-1">
-                    <img
-                      src={previewImage}
-                      alt="Pamja e parë"
-                      className="w-12 h-10 object-cover rounded-lg border border-neutral-700"
-                    />
-                    <span className="text-[10px] text-emerald-400 font-medium">Fotoja u zgjodh!</span>
-                  </div>
-                )}
-              </div>
+            <div className="grid grid-cols-3 gap-3">
+              {previewImages.map((src, idx) => (
+                <div
+                  key={idx}
+                  className="relative aspect-[4/3] rounded-xl overflow-hidden border border-neutral-800 bg-neutral-950 group"
+                >
+                  <img src={src} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                  {idx === 0 && (
+                    <span className="absolute top-1.5 left-1.5 bg-amber-500 text-black text-[9px] font-bold px-1.5 py-0.5 rounded">
+                      Kryesore
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePhoto(idx)}
+                    className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/80 text-rose-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    title="Hiqe foton"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+
+              {remainingSlots > 0 && (
+                <div className="aspect-[4/3] border border-dashed border-neutral-700 bg-neutral-950 rounded-xl text-center hover:border-amber-500 transition-colors flex items-center justify-center">
+                  <input
+                    type="file"
+                    accept="image/*,image/heic,image/heif,.png,.jpg,.jpeg,.webp"
+                    multiple
+                    onChange={(e) => {
+                      handleAddPhotoFiles(e.target.files);
+                      e.target.value = '';
+                    }}
+                    className="hidden"
+                    id="product-image-file"
+                  />
+                  <label htmlFor="product-image-file" className="cursor-pointer flex flex-col items-center gap-1 p-2">
+                    <Upload className="w-5 h-5 text-amber-400" />
+                    <span className="text-[10px] text-neutral-300 font-semibold text-center">
+                      Shto Foto ({remainingSlots} vend{remainingSlots > 1 ? 'e' : ''} të lira)
+                    </span>
+                  </label>
+                </div>
+              )}
             </div>
+
+            <p className="text-[10px] text-neutral-500">
+              Ngarko 1 deri në 3 foto për këtë makinë. Foto e parë përdoret si foto kryesore te lista.
+            </p>
           </div>
 
           <div>

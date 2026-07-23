@@ -44,9 +44,9 @@ export function useProducts() {
     };
   }, []);
 
-  const handleAdd = async (productData: Omit<Product, 'id'>, imageFile?: File) => {
+  const handleAdd = async (productData: Omit<Product, 'id'>, imageFiles?: File[]) => {
     try {
-      return await addProduct(productData, imageFile);
+      return await addProduct(productData, imageFiles);
     } catch (err) {
       throw err;
     }
@@ -55,10 +55,10 @@ export function useProducts() {
   const handleUpdate = async (
     id: string,
     updates: Partial<Product>,
-    newImageFile?: File
+    newImageFiles?: File[]
   ) => {
     try {
-      return await updateProduct(id, updates, newImageFile);
+      return await updateProduct(id, updates, newImageFiles);
     } catch (err) {
       throw err;
     }

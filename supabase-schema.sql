@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS public.products (
   description TEXT DEFAULT '',
   price NUMERIC NOT NULL DEFAULT 0,
   image_url TEXT NOT NULL,
+  gallery_urls TEXT[] DEFAULT '{}',
   available BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -24,6 +25,7 @@ CREATE TABLE IF NOT EXISTS public.cars (
   description TEXT,
   price_per_day NUMERIC NOT NULL,
   image_url TEXT,
+  gallery_urls TEXT[] DEFAULT '{}',
   transmission TEXT,
   fuel TEXT,
   seats INTEGER,
@@ -31,6 +33,10 @@ CREATE TABLE IF NOT EXISTS public.cars (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
+
+-- 1b. If the tables already existed before this update, add the new column:
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS gallery_urls TEXT[] DEFAULT '{}';
+ALTER TABLE public.cars ADD COLUMN IF NOT EXISTS gallery_urls TEXT[] DEFAULT '{}';
 
 -- 3. Enable Row Level Security (RLS)
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;

@@ -47,6 +47,19 @@ export const uploadProductImage = async (file: File): Promise<string> => {
 };
 
 /**
+ * Upload up to 3 image files and return their public URLs (in order).
+ */
+export const uploadProductImages = async (files: File[]): Promise<string[]> => {
+  const limited = files.slice(0, 3);
+  const urls: string[] = [];
+  for (const file of limited) {
+    const url = await uploadProductImage(file);
+    urls.push(url);
+  }
+  return urls;
+};
+
+/**
  * Subscribe to real-time changes in Supabase (Project: nzboklccdeytymhbjyiu)
  */
 export const subscribeProducts = (onProductsUpdated: (products: Product[]) => void) => {
@@ -101,6 +114,7 @@ export const getProducts = async (): Promise<Product[]> => {
           description: item.description || '',
           price: Number(item.price_per_day ?? item.price ?? 0),
           image_url: item.image_url || item.image || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=1200&q=80',
+          gallery_urls: Array.isArray(item.gallery_urls) ? item.gallery_urls : [],
           available: item.available ?? true,
           created_at: item.created_at,
           brand: item.brand,
@@ -126,6 +140,7 @@ export const getProducts = async (): Promise<Product[]> => {
           description: item.description || '',
           price: Number(item.price || 0),
           image_url: item.image_url || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=1200&q=80',
+          gallery_urls: Array.isArray(item.gallery_urls) ? item.gallery_urls : [],
           available: item.available ?? true,
           created_at: item.created_at,
           brand: item.brand,
@@ -145,16 +160,23 @@ export const getProducts = async (): Promise<Product[]> => {
  */
 export const addProduct = async (
   productData: Omit<Product, 'id'>,
-  imageFile?: File
+  imageFiles?: File[]
 ): Promise<Product> => {
-  let finalImageUrl = productData.image_url;
+  let finalGallery: string[] = productData.gallery_urls || [];
 
-  if (imageFile) {
-    finalImageUrl = await uploadProductImage(imageFile);
+  if (imageFiles && imageFiles.length > 0) {
+    const uploaded = await uploadProductImages(imageFiles);
+    finalGallery = [...finalGallery, ...uploaded].slice(0, 3);
   }
+
+  let finalImageUrl = finalGallery[0] || productData.image_url;
 
   if (!finalImageUrl) {
     finalImageUrl = 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=1200&q=80';
+  }
+
+  if (finalGallery.length === 0) {
+    finalGallery = [finalImageUrl];
   }
 
   const nameParts = productData.name.trim().split(' ');
@@ -168,6 +190,7 @@ export const addProduct = async (
     description: productData.description || '',
     price_per_day: Number(productData.price || 0),
     image_url: finalImageUrl,
+    gallery_urls: finalGallery,
     available: productData.available ?? true,
     year: productData.year || 2024,
     transmission: productData.transmission || 'Automatic',
@@ -191,6 +214,7 @@ export const addProduct = async (
           description: data.description,
           price: Number(data.price_per_day || data.price || 0),
           image_url: data.image_url,
+          gallery_urls: Array.isArray(data.gallery_urls) ? data.gallery_urls : finalGallery,
           available: data.available,
           created_at: data.created_at,
           brand: data.brand,
@@ -214,6 +238,7 @@ export const addProduct = async (
     description: productData.description || '',
     price: Number(productData.price || 0),
     image_url: finalImageUrl,
+    gallery_urls: finalGallery,
     available: productData.available ?? true,
     brand,
     model,
@@ -226,12 +251,15 @@ export const addProduct = async (
 export const updateProduct = async (
   id: string,
   updates: Partial<Product>,
-  newImageFile?: File
+  newImageFiles?: File[]
 ): Promise<Product> => {
   let finalImageUrl = updates.image_url;
+  let finalGallery: string[] | undefined = updates.gallery_urls;
 
-  if (newImageFile) {
-    finalImageUrl = await uploadProductImage(newImageFile);
+  if (newImageFiles && newImageFiles.length > 0) {
+    const uploaded = await uploadProductImages(newImageFiles);
+    finalGallery = [...(finalGallery || []), ...uploaded].slice(0, 3);
+    finalImageUrl = finalGallery[0];
   }
 
   const strId = String(id);
@@ -243,6 +271,7 @@ export const updateProduct = async (
     ...(updates.description !== undefined && { description: updates.description }),
     ...(updates.price !== undefined && { price_per_day: Number(updates.price), price: Number(updates.price) }),
     ...(finalImageUrl && { image_url: finalImageUrl }),
+    ...(finalGallery && { gallery_urls: finalGallery }),
     ...(updates.available !== undefined && { available: updates.available }),
   };
 
@@ -262,6 +291,7 @@ export const updateProduct = async (
     description: updates.description || '',
     price: Number(updates.price || 0),
     image_url: finalImageUrl || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=1200&q=80',
+    gallery_urls: finalGallery || [],
     available: updates.available ?? true,
   };
 };

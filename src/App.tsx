@@ -10,6 +10,7 @@ import { ContactSection } from './components/ContactSection';
 import { AdminPage } from './pages/Admin';
 import { useProducts } from './hooks/useProducts';
 import { Car } from './types/car';
+import illyrianLogo from './assets/illyrian-logo.jpeg';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('home');
@@ -29,6 +30,7 @@ export default function App() {
         model,
         year: p.year || 2024,
         image: p.image_url || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=1200&q=80',
+        gallery: p.gallery_urls && p.gallery_urls.length > 0 ? p.gallery_urls : [p.image_url || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=1200&q=80'],
         pricePerDay: Number(p.price || 0),
         transmission: (p.transmission as any) || 'Automatic',
         fuel: (p.fuel as any) || 'Diesel',
@@ -54,18 +56,30 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col justify-between selection:bg-amber-500 selection:text-black">
-      {/* Sticky Global Navbar */}
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onOpenAdmin={() => {
-          setActiveTab('admin');
+    <div className="relative min-h-screen bg-black text-white flex flex-col justify-between selection:bg-amber-500 selection:text-black">
+      {/* Fixed Watermark Background Logo */}
+      <div
+        className="fixed inset-0 z-0 pointer-events-none bg-center bg-no-repeat opacity-[0.06]"
+        style={{
+          backgroundImage: `url(${illyrianLogo})`,
+          backgroundSize: 'min(70vw, 900px)',
         }}
+        aria-hidden="true"
       />
 
+      {/* Sticky Global Navbar */}
+      <div className="relative z-10">
+        <Navbar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onOpenAdmin={() => {
+            setActiveTab('admin');
+          }}
+        />
+      </div>
+
       {/* Main Page Router View */}
-      <main className="flex-1">
+      <main className="relative z-10 flex-1">
         {activeTab === 'home' && (
           <Home setActiveTab={setActiveTab} onSelectCar={handleSelectCar} cars={cars} />
         )}
@@ -94,10 +108,14 @@ export default function App() {
       </main>
 
       {/* Floating WhatsApp Action Trigger (Bottom-Right) */}
-      <WhatsAppButton />
+      <div className="relative z-10">
+        <WhatsAppButton />
+      </div>
 
       {/* Global Footer */}
-      <Footer setActiveTab={setActiveTab} />
+      <div className="relative z-10">
+        <Footer setActiveTab={setActiveTab} />
+      </div>
     </div>
   );
 }
