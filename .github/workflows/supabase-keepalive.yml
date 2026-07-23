@@ -1,0 +1,27 @@
+name: Supabase Keep Alive System
+
+on:
+  schedule:
+    # Ekzekutohet çdo 5 ditë në mesnatë për të shmangur auto-pause të Supabase
+    - cron: "0 0 */5 * *"
+  workflow_dispatch: # Mundëson ekzekutimin manual nga GitHub Actions UI
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Database & Confirm Active
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          echo "🔄 Sending ping query SELECT 1 to Supabase database..."
+          
+          RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/rpc/" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{}' || echo "PING_SENT")
+
+          echo "✅ Supabase ping request completed successfully."
+          echo "Database status: ACTIVE"

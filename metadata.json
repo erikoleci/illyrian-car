@@ -1,0 +1,6 @@
+{
+  "name": "Illyrian Rental Car",
+  "description": "Premium luxury and reliable car rental service in Albania with instant WhatsApp reservation",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
