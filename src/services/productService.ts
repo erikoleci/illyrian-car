@@ -54,23 +54,30 @@ export const uploadProductImage = async (file: File): Promise<string> => {
 };
 
 /**
- * Fetch all products from Supabase database or Local Cache
+ * Fetch all products/cars from Supabase database or Local Cache
  */
 export const getProducts = async (): Promise<Product[]> => {
+  const deletedIds: string[] = JSON.parse(
+    localStorage.getItem('illyrian_deleted_products') || '[]'
+  );
+
+  let fetchedProducts: Product[] = [];
+
   try {
     if (isSupabaseConfigured()) {
-      const { data, error } = await supabase
+      // 1. Try fetching from 'products' table
+      const { data: productsData } = await supabase
         .from(PRODUCTS_TABLE)
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
-        return data.map((item: any) => ({
+      if (productsData && productsData.length > 0) {
+        const mappedProducts = productsData.map((item: any) => ({
           id: String(item.id),
           name: item.name || `${item.brand || ''} ${item.model || ''}`.trim() || 'Produkt',
           category: item.category || item.type || 'Sedan',
           description: item.description || '',
-          price: Number(item.price ?? item.pricePerDay ?? 0),
+          price: Number(item.price ?? item.price_per_day ?? item.pricePerDay ?? 0),
           image_url: item.image_url || item.image || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=1200&q=80',
           available: item.available ?? true,
           created_at: item.created_at,
@@ -81,13 +88,51 @@ export const getProducts = async (): Promise<Product[]> => {
           fuel: item.fuel,
           seats: item.seats,
         }));
+        fetchedProducts.push(...mappedProducts);
+      }
+
+      // 2. Try fetching from 'cars' table
+      const { data: carsData } = await supabase
+        .from('cars')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (carsData && carsData.length > 0) {
+        const mappedCars = carsData.map((item: any) => ({
+          id: String(item.id),
+          name: item.name || `${item.brand || ''} ${item.model || ''}`.trim() || 'Makinë',
+          category: item.category || 'Sedan',
+          description: item.description || '',
+          price: Number(item.price_per_day ?? item.price ?? 0),
+          image_url: item.image_url || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=1200&q=80',
+          available: item.available ?? true,
+          created_at: item.created_at,
+          brand: item.brand,
+          model: item.model,
+          year: item.year,
+          transmission: item.transmission,
+          fuel: item.fuel,
+          seats: item.seats,
+        }));
+
+        // Merge keeping unique IDs
+        for (const carItem of mappedCars) {
+          if (!fetchedProducts.some((p) => String(p.id) === String(carItem.id))) {
+            fetchedProducts.push(carItem);
+          }
+        }
       }
     }
   } catch (err) {
     console.warn('Could not fetch from Supabase, loading local products:', err);
   }
 
-  return getLocalProducts();
+  if (fetchedProducts.length === 0) {
+    fetchedProducts = getLocalProducts();
+  }
+
+  // Filter out any deleted product IDs regardless of source
+  return fetchedProducts.filter((p) => !deletedIds.includes(String(p.id)));
 };
 
 /**
@@ -107,7 +152,11 @@ export const addProduct = async (
     finalImageUrl = 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=1200&q=80';
   }
 
-  const payload = {
+  const nameParts = productData.name.trim().split(' ');
+  const brand = nameParts[0] || 'Auto';
+  const model = nameParts.slice(1).join(' ') || nameParts[0] || 'Model';
+
+  const productPayload = {
     name: productData.name,
     category: productData.category || 'Sedan',
     description: productData.description || '',
@@ -116,11 +165,44 @@ export const addProduct = async (
     available: productData.available ?? true,
   };
 
+  const carPayload = {
+    brand,
+    model,
+    category: productData.category || 'Sedan',
+    description: productData.description || '',
+    price_per_day: Number(productData.price || 0),
+    image_url: finalImageUrl,
+    available: productData.available ?? true,
+  };
+
   if (isSupabaseConfigured()) {
     try {
+      // Try inserting into 'cars' table first if available
+      const { data: carData, error: carErr } = await supabase
+        .from('cars')
+        .insert([carPayload])
+        .select()
+        .single();
+
+      if (!carErr && carData) {
+        return {
+          id: String(carData.id),
+          name: `${carData.brand} ${carData.model}`.trim(),
+          category: carData.category,
+          description: carData.description,
+          price: Number(carData.price_per_day),
+          image_url: carData.image_url,
+          available: carData.available,
+          created_at: carData.created_at,
+          brand: carData.brand,
+          model: carData.model,
+        };
+      }
+
+      // Try inserting into 'products' table
       const { data, error } = await supabase
         .from(PRODUCTS_TABLE)
-        .insert([payload])
+        .insert([productPayload])
         .select()
         .single();
 
@@ -146,7 +228,7 @@ export const addProduct = async (
   // Local fallback creation
   const newProduct: Product = {
     id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-    ...payload,
+    ...productPayload,
     created_at: new Date().toISOString(),
   };
 
@@ -172,32 +254,15 @@ export const updateProduct = async (
     ...(updates.name && { name: updates.name }),
     ...(updates.category && { category: updates.category }),
     ...(updates.description !== undefined && { description: updates.description }),
-    ...(updates.price !== undefined && { price: Number(updates.price) }),
+    ...(updates.price !== undefined && { price: Number(updates.price), price_per_day: Number(updates.price) }),
     ...(finalImageUrl && { image_url: finalImageUrl }),
     ...(updates.available !== undefined && { available: updates.available }),
   };
 
   if (isSupabaseConfigured() && isUUID(id)) {
     try {
-      const { data, error } = await supabase
-        .from(PRODUCTS_TABLE)
-        .update(payload)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (!error && data) {
-        return {
-          id: String(data.id),
-          name: data.name,
-          category: data.category,
-          description: data.description,
-          price: Number(data.price),
-          image_url: data.image_url,
-          available: data.available,
-          created_at: data.created_at,
-        };
-      }
+      await supabase.from('cars').update(payload).eq('id', id);
+      await supabase.from(PRODUCTS_TABLE).update(payload).eq('id', id);
     } catch (e) {
       console.warn('Error updating product in Supabase:', e);
     }
@@ -220,23 +285,20 @@ export const updateProduct = async (
  * Delete product safely from Supabase and Local Storage
  */
 export const deleteProduct = async (id: string): Promise<void> => {
-  if (isSupabaseConfigured() && isUUID(id)) {
-    try {
-      const { error } = await supabase
-        .from(PRODUCTS_TABLE)
-        .delete()
-        .eq('id', id);
+  const strId = String(id);
 
-      if (error) {
-        console.warn('Supabase delete returned error:', error.message);
-      }
+  if (isSupabaseConfigured()) {
+    try {
+      // Attempt delete from both 'cars' and 'products' tables in Supabase
+      await supabase.from('cars').delete().eq('id', strId);
+      await supabase.from(PRODUCTS_TABLE).delete().eq('id', strId);
     } catch (err) {
       console.warn('Error deleting from Supabase:', err);
     }
   }
 
   // Always clear from local storage / cache
-  deleteFromLocalStorage(id);
+  deleteFromLocalStorage(strId);
 };
 
 // ================= LOCAL STORAGE HELPERS =================
@@ -298,16 +360,17 @@ function updateInLocalStorage(id: string, updates: any) {
 
 function deleteFromLocalStorage(id: string) {
   try {
+    const targetId = String(id);
     const customJson = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (customJson) {
       let customProducts: Product[] = JSON.parse(customJson);
-      customProducts = customProducts.filter((p) => p.id !== id);
+      customProducts = customProducts.filter((p) => String(p.id) !== targetId);
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(customProducts));
     }
 
     const deletedIds: string[] = JSON.parse(localStorage.getItem('illyrian_deleted_products') || '[]');
-    if (!deletedIds.includes(id)) {
-      deletedIds.push(id);
+    if (!deletedIds.includes(targetId)) {
+      deletedIds.push(targetId);
       localStorage.setItem('illyrian_deleted_products', JSON.stringify(deletedIds));
     }
   } catch (e) {

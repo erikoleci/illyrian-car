@@ -57,7 +57,7 @@ export function useProducts() {
   const handleDelete = async (id: string) => {
     try {
       await deleteProduct(id);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
+      setProducts((prev) => prev.filter((p) => String(p.id) !== String(id)));
     } catch (err) {
       throw err;
     }
