@@ -7,6 +7,7 @@ import { getFeaturedCars } from '../data/cars';
 import { Car } from '../types/car';
 import { createGeneralWhatsAppLink, COMPANY_CONFIG } from '../config/whatsapp';
 import { MessageCircle, ArrowRight, ShieldCheck, Sparkles, Plane, Calendar, MapPin, ChevronRight, Check } from 'lucide-react';
+import illyrianLogo from '../assets/illyrian-logo.jpeg';
 
 interface HomeProps {
   setActiveTab: (tab: string) => void;
@@ -30,12 +31,11 @@ export const Home: React.FC<HomeProps> = ({ setActiveTab, onSelectCar, cars }) =
     <div className="min-h-screen text-white">
       {/* ================= HERO SECTION ================= */}
       <section className="relative min-h-[90vh] flex items-center justify-center pt-24 pb-16 overflow-hidden">
-        {/* Background Image with Dark Vignette */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src="https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=2000&q=85"
-            alt="Illyrian Rental Car Hero"
-            className="w-full h-full object-cover object-center filter brightness-[0.45] contrast-[1.1]"
+        {/* Background: Illyrian Logo with Dark Vignette */}
+        <div className="absolute inset-0 z-0 bg-black">
+          <div
+            className="absolute inset-0 bg-center bg-no-repeat opacity-20"
+            style={{ backgroundImage: `url(${illyrianLogo})`, backgroundSize: 'min(60vw, 800px)' }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-black/40 to-black" />
