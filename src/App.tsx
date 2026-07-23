@@ -68,15 +68,13 @@ export default function App() {
       />
 
       {/* Sticky Global Navbar */}
-      <div className="relative z-10">
-        <Navbar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          onOpenAdmin={() => {
-            setActiveTab('admin');
-          }}
-        />
-      </div>
+      <Navbar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onOpenAdmin={() => {
+          setActiveTab('admin');
+        }}
+      />
 
       {/* Main Page Router View */}
       <main className="relative z-10 flex-1">
