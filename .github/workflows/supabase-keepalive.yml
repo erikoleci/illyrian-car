@@ -15,13 +15,23 @@ jobs:
           SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: |
-          echo "🔄 Sending ping query SELECT 1 to Supabase database..."
-          
-          RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/rpc/" \
-            -H "apikey: ${SUPABASE_ANON_KEY}" \
-            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
-            -H "Content-Type: application/json" \
-            -d '{}' || echo "PING_SENT")
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Warning: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY secret mungon te GitHub repo settings."
+            exit 0
+          fi
 
-          echo "✅ Supabase ping request completed successfully."
-          echo "Database status: ACTIVE"
+          echo "Duke dërguar ping te Supabase..."
+
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X GET "${SUPABASE_URL}/rest/v1/cars?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+
+          echo "Supabase HTTP Response Code: ${RESPONSE}"
+
+          if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 206 ]; then
+            echo "Success: Supabase database është AKTIVE."
+          else
+            echo "Error: ping dështoi me status ${RESPONSE}."
+            exit 1
+          fi
