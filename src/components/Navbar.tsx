@@ -22,11 +22,10 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenA
   }, []);
 
   const navItems = [
-    { id: 'home', label: 'Home' },
-    { id: 'cars', label: 'Cars' },
-    { id: 'products', label: 'Products' },
-    { id: 'about', label: 'About Us' },
-    { id: 'contact', label: 'Contact' },
+    { id: 'home', label: 'Kreu' },
+    { id: 'cars', label: 'Flota (Makinat)' },
+    { id: 'about', label: 'Rreth Nesh' },
+    { id: 'contact', label: 'Kontakt' },
     { id: 'admin', label: 'Admin' },
   ];
 

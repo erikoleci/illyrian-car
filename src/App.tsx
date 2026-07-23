@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { WhatsAppButton } from './components/WhatsAppButton';
@@ -7,29 +7,39 @@ import { CarsPage } from './pages/Cars';
 import { CarDetails } from './pages/CarDetails';
 import { AboutUsPage } from './pages/AboutUs';
 import { ContactSection } from './components/ContactSection';
-import { ProductsPage } from './pages/Products';
 import { AdminPage } from './pages/Admin';
-import { AdminManager } from './components/AdminManager';
-import { initialCars } from './data/cars';
-import { subscribeCars } from './services/carsService';
+import { useProducts } from './hooks/useProducts';
 import { Car } from './types/car';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('home');
-  const [cars, setCars] = useState<Car[]>(initialCars);
   const [selectedCar, setSelectedCar] = useState<Car | null>(null);
-  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const { products } = useProducts();
 
-  // Real-time synchronization
-  useEffect(() => {
-    const unsubscribe = subscribeCars((liveCars) => {
-      if (liveCars && liveCars.length > 0) {
-        setCars(liveCars);
-      }
+  // Single Source of Truth: Convert products from Admin/Supabase to Car items
+  const cars: Car[] = useMemo(() => {
+    return products.map((p) => {
+      const nameParts = (p.name || '').trim().split(' ');
+      const brand = p.brand || nameParts[0] || 'Auto';
+      const model = p.model || nameParts.slice(1).join(' ') || p.name || 'Makinë';
+
+      return {
+        id: p.id,
+        brand,
+        model,
+        year: p.year || 2024,
+        image: p.image_url || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=1200&q=80',
+        pricePerDay: Number(p.price || 0),
+        transmission: (p.transmission as any) || 'Automatic',
+        fuel: (p.fuel as any) || 'Diesel',
+        seats: p.seats || 5,
+        type: (p.category as any) || 'Sedan',
+        description: p.description || '',
+        available: p.available ?? true,
+        featured: true,
+      };
     });
-
-    return () => unsubscribe();
-  }, []);
+  }, [products]);
 
   const handleSelectCar = (car: Car) => {
     setSelectedCar(car);
@@ -51,7 +61,6 @@ export default function App() {
         setActiveTab={setActiveTab}
         onOpenAdmin={() => {
           setActiveTab('admin');
-          setIsAdminOpen(false);
         }}
       />
 
@@ -61,12 +70,8 @@ export default function App() {
           <Home setActiveTab={setActiveTab} onSelectCar={handleSelectCar} cars={cars} />
         )}
 
-        {activeTab === 'cars' && (
+        {(activeTab === 'cars' || activeTab === 'products') && (
           <CarsPage onSelectCar={handleSelectCar} cars={cars} />
-        )}
-
-        {activeTab === 'products' && (
-          <ProductsPage />
         )}
 
         {activeTab === 'admin' && (
@@ -87,14 +92,6 @@ export default function App() {
           <CarDetails car={selectedCar} onBack={handleBackToCars} />
         )}
       </main>
-
-      {/* Legacy Admin Modal trigger option */}
-      {isAdminOpen && (
-        <AdminManager
-          cars={cars}
-          onClose={() => setIsAdminOpen(false)}
-        />
-      )}
 
       {/* Floating WhatsApp Action Trigger (Bottom-Right) */}
       <WhatsAppButton />

@@ -33,7 +33,7 @@ export const subscribeCars = (onCarsUpdated: (cars: Car[]) => void) => {
     });
 
     // Sort by ID descending so newest cars appear first
-    carsList.sort((a, b) => b.id - a.id);
+    carsList.sort((a, b) => String(b.id).localeCompare(String(a.id)));
     onCarsUpdated(carsList);
   }, (error) => {
     console.error('Error fetching cars from Firestore:', error);

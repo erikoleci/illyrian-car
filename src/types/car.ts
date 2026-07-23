@@ -3,7 +3,7 @@ export type Transmission = 'Automatic' | 'Manual';
 export type FuelType = 'Diesel' | 'Petrol' | 'Hybrid' | 'Electric';
 
 export interface Car {
-  id: number;
+  id: number | string;
   brand: string;
   model: string;
   year: number;
