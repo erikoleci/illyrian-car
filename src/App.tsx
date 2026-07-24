@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { WhatsAppButton } from './components/WhatsAppButton';
+import { ChatWidget } from './components/ChatWidget';
 import { Home } from './pages/Home';
 import { CarsPage } from './pages/Cars';
 import { CarDetails } from './pages/CarDetails';
@@ -108,6 +109,11 @@ export default function App() {
       {/* Floating WhatsApp Action Trigger (Bottom-Right) */}
       <div className="relative z-10">
         <WhatsAppButton />
+      </div>
+
+      {/* Floating Booking Agent Chat (Bottom-Left) */}
+      <div className="relative z-10">
+        <ChatWidget />
       </div>
 
       {/* Global Footer */}
