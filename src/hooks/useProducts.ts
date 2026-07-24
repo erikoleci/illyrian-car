@@ -46,7 +46,9 @@ export function useProducts() {
 
   const handleAdd = async (productData: Omit<Product, 'id'>, imageFiles?: File[]) => {
     try {
-      return await addProduct(productData, imageFiles);
+      const result = await addProduct(productData, imageFiles);
+      await fetchProducts();
+      return result;
     } catch (err) {
       throw err;
     }
@@ -58,7 +60,9 @@ export function useProducts() {
     newImageFiles?: File[]
   ) => {
     try {
-      return await updateProduct(id, updates, newImageFiles);
+      const result = await updateProduct(id, updates, newImageFiles);
+      await fetchProducts();
+      return result;
     } catch (err) {
       throw err;
     }
@@ -67,6 +71,7 @@ export function useProducts() {
   const handleDelete = async (id: string) => {
     try {
       await deleteProduct(id);
+      await fetchProducts();
     } catch (err) {
       throw err;
     }
