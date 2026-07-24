@@ -319,6 +319,32 @@ Detyra jote:
       loopGuard++;
     }
 
+    // If we still don't have a text reply (e.g. the model kept trying to call
+    // functions and hit the loop guard), force one final plain-text summary.
+    if (!modelContent?.parts?.find((p) => p.text)) {
+      const finalRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents,
+            system_instruction: {
+              parts: [
+                {
+                  text:
+                    systemInstruction +
+                    '\n\nMOS thirr asnjë funksion tani. Bazuar te rezultatet e funksioneve më sipër në bisedë, jep VETËM një mesazh konfirmues teksti të shkurtër për klientin.',
+                },
+              ],
+            },
+          }),
+        }
+      );
+      const finalData = await finalRes.json();
+      modelContent = finalData.candidates?.[0]?.content;
+    }
+
     const replyText =
       modelContent?.parts?.find((p) => p.text)?.text ||
       'Më vjen keq, diçka shkoi keq. Provo përsëri ose na kontakto në WhatsApp.';
