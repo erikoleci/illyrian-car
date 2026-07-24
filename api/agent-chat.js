@@ -188,10 +188,10 @@ const TOOLS = [
         name: 'check_availability',
         description: 'Kontrollon nëse datat e kërkuara janë të lira në kalendar (asnjë rezervim tjetër në ato data).',
         parameters: {
-          type: 'OBJECT',
+          type: 'object',
           properties: {
-            startDate: { type: 'STRING', description: 'Data e fillimit, format YYYY-MM-DD' },
-            endDate: { type: 'STRING', description: 'Data e mbarimit, format YYYY-MM-DD' },
+            startDate: { type: 'string', description: 'Data e fillimit, format YYYY-MM-DD' },
+            endDate: { type: 'string', description: 'Data e mbarimit, format YYYY-MM-DD' },
           },
           required: ['startDate', 'endDate'],
         },
@@ -201,15 +201,15 @@ const TOOLS = [
         description:
           'Krijon rezervimin final: shton event në kalendar, dërgon email konfirmimi te pronari, dhe e ruan në databazë. Përdore VETËM pasi klienti ka konfirmuar shprehimisht dhe check_availability ka treguar se datat janë të lira.',
         parameters: {
-          type: 'OBJECT',
+          type: 'object',
           properties: {
-            carName: { type: 'STRING' },
-            startDate: { type: 'STRING', description: 'YYYY-MM-DD' },
-            endDate: { type: 'STRING', description: 'YYYY-MM-DD' },
-            customerName: { type: 'STRING' },
-            customerContact: { type: 'STRING', description: 'Numri telefonit ose email i klientit' },
-            pricePerDay: { type: 'NUMBER' },
-            totalDays: { type: 'NUMBER' },
+            carName: { type: 'string' },
+            startDate: { type: 'string', description: 'YYYY-MM-DD' },
+            endDate: { type: 'string', description: 'YYYY-MM-DD' },
+            customerName: { type: 'string' },
+            customerContact: { type: 'string', description: 'Numri telefonit ose email i klientit' },
+            pricePerDay: { type: 'number' },
+            totalDays: { type: 'number' },
           },
           required: ['carName', 'startDate', 'endDate', 'pricePerDay', 'totalDays'],
         },
@@ -227,7 +227,7 @@ async function callGemini(contents, systemInstruction) {
       body: JSON.stringify({
         contents,
         tools: TOOLS,
-        systemInstruction: { parts: [{ text: systemInstruction }] },
+        system_instruction: { parts: [{ text: systemInstruction }] },
       }),
     }
   );
@@ -326,6 +326,9 @@ Detyra jote:
     res.status(200).json({ reply: replyText });
   } catch (err) {
     console.error('agent-chat error:', err);
-    res.status(500).json({ reply: 'Pati një problem teknik. Ju lutem provoni sërish ose na shkruani në WhatsApp.' });
+    res.status(500).json({
+      reply: 'Pati një problem teknik. Ju lutem provoni sërish ose na shkruani në WhatsApp.',
+      debug: String(err && err.message ? err.message : err),
+    });
   }
 }
