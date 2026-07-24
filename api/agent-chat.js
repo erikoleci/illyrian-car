@@ -311,7 +311,7 @@ Detyra jote:
 
       contents.push({ role: 'model', parts: modelContent.parts });
       contents.push({
-        role: 'function',
+        role: 'user',
         parts: [{ functionResponse: { name, response: toolResult } }],
       });
 
